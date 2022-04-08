@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "743517553138",
+    "project_id": "myiapp1",
+    "storage_bucket": "myiapp1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:743517553138:android:4008d6224d1b179e10eb6b",
+        "android_client_info": {
+          "package_name": "com.codetek.myiproject"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "743517553138-9pidmruaooavlf4h9pe7bv6cteo801r3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0bw6n9JkqJh7paJv8t8APKrFldLotUy0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "743517553138-9pidmruaooavlf4h9pe7bv6cteo801r3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
