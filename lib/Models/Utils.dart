@@ -6,6 +6,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myiproject/Models/Colors.dart';
 import 'package:myiproject/Models/User.dart';
+import 'package:myiproject/Views/Widgets/PopUps/Confirmation.dart';
 import 'package:myiproject/Views/Widgets/PopUps/PopUpLoading.dart';
 
 class Utils {
@@ -20,6 +21,8 @@ class Utils {
   static late ProfileUser profileUser;
 
   static var loadingMessage;
+
+  static var imageResponse;
 
   static var lightNavbar = SystemUiOverlayStyle.light.copyWith(
       statusBarBrightness: Brightness.light,
@@ -46,6 +49,10 @@ class Utils {
 
   static TextStyle getprimaryFieldTextStyle(Color color) {
     return GoogleFonts.openSans(color: UtilColors.blackColor, fontSize: 13.0);
+  }
+
+    static TextStyle getprimaryFieldTextStyle2(Color color) {
+    return GoogleFonts.openSans(color: color, fontSize: 13.0);
   }
 
   static TextStyle getprimaryFieldTextStylePopUp(Color color) {
@@ -129,11 +136,11 @@ class Utils {
   }
 
   static Future showConfirmation(
-    context,
+    context,okFunction
   ) async {
     await showDialog(
       context: context,
-      builder: (_) => PopUpLoading(),
+      builder: (_) => Confirmation(okFunction: okFunction),
     ).then((onValue) {
       parentLoadingContext = context;
       checkShowLoader = true;

@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:firebase_database/firebase_database.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myiproject/Controllers/Auth/AuthController.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myiproject/Models/Colors.dart';
 import 'package:myiproject/Models/Utils.dart';
+import 'package:myiproject/Views/Forms/DataForm.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -17,7 +22,14 @@ class _HomeState extends State<Home> {
 
   final double topSpace = Utils.displaySize.width * 0.4;
   final ImagePicker _picker = ImagePicker();
-  late final XFile? image;
+
+  late DatabaseReference _databaseRef;
+
+  @override
+  void initState() {
+    _databaseRef = FirebaseDatabase.instance.ref();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,19 +81,6 @@ class _HomeState extends State<Home> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(
-                      width: Utils.displaySize.width * 0.9,
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 20.0, horizontal: 10.0),
-                          child: getEmptyData(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 30.0,
-                    ),
-                    SizedBox(
                         child: TextButton(
                       child: Text(
                         "CAPTURE IMAGE",
@@ -94,11 +93,17 @@ class _HomeState extends State<Home> {
                             UtilColors.primaryColor),
                       ),
                       onPressed: () async {
-                        image ??=
+                        XFile? image =
                             await _picker.pickImage(source: ImageSource.camera);
-                        
+                        if (image != null && await image.length() > 0) {
+                          print("Have an image");
+                          print(await image.length());
 
-
+                          submitImage(
+                              file: File(image.path), filename: image.name);
+                        } else {
+                          print("Terminated");
+                        }
                       },
                     ))
                   ],
@@ -109,51 +114,72 @@ class _HomeState extends State<Home> {
     ));
   }
 
-  getEmptyData() {
-    return Text(
-      'Please upload image to scan facts',
-      style: TextStyle(color: UtilColors.greyColor, fontSize: 12.0),
-    );
-  }
+  Future<void> submitImage(
+      {required File file, required String filename}) async {
+    await _databaseRef
+        .child('users')
+        .child(Utils.profileUser.uid)
+        .child('data')
+        .once()
+        .then((value) {
+      if (value.snapshot.exists) {
+        Utils.showConfirmation(context, () {
+          Navigator.pop(context);
+          Navigator.push(
+              context, MaterialPageRoute(builder: (_) => DataForm()));
+        });
+      } else {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => DataForm()));
+      }
+    });
 
-  getPredictionData(data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        const Text('Prediction Data'),
-        Divider(),
-        const SizedBox(
-          height: 10.0,
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5.0),
-          child: Text(
-            'Prediction Data : 123',
-            style: TextStyle(fontSize: 12.0),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5.0),
-          child: Text(
-            'Prediction Data : 123',
-            style: TextStyle(fontSize: 12.0),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5.0),
-          child: Text(
-            'Prediction Data : 123',
-            style: TextStyle(fontSize: 12.0),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5.0),
-          child: Text(
-            'Prediction Data : 123',
-            style: TextStyle(fontSize: 12.0),
-          ),
-        ),
-      ],
-    );
+    // var request = http.MultipartRequest(
+    //   'POST',
+    //   Uri.parse("10.0.2.2:5000"),
+    // );
+    // request.files.add(
+    //   http.MultipartFile(
+    //     'file',
+    //     file.readAsBytes().asStream(),
+    //     file.lengthSync(),
+    //     filename: filename,
+    //     contentType: MediaType('image', 'jpeg'),
+    //   ),
+    // );
+    // request.headers.addAll({"Content-type": "multipart/form-data"});
+    // var res = await request.send();
+
+    // if (res.statusCode == 200) {
+    //   var data = jsonDecode(res.toString());
+    //   if (data['code'] == 200 && data['status'] == 'success') {
+    //     if (data['data'] != null) {
+    //       Utils.imageResponse = data['data'];
+
+    //       await _databaseRef
+    //           .child('users')
+    //           .child(Utils.profileUser.uid)
+    //           .child('data')
+    //           .once()
+    //           .then((value) {
+    //         if (value.snapshot.exists) {
+    //           Utils.showConfirmation(context, () {
+        // Navigator.pop(context);
+    //             Navigator.push(
+    //                 context, MaterialPageRoute(builder: (_) => DataForm()));
+    //           });
+    //         } else {
+    //           Navigator.push(
+    //               context, MaterialPageRoute(builder: (_) => DataForm()));
+    //         }
+    //       });
+    //     } else {
+    //       Utils.showToast("Uploaded image processing failure.");
+    //     }
+    //   } else {
+    //     Utils.showToast("Uploaded image processing failure.");
+    //   }
+    // } else {
+    //   Utils.showToast("Uploaded image processing failure.");
+    // }
   }
 }
