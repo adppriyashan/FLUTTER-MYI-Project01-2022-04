@@ -8,6 +8,7 @@ import 'package:myiproject/Models/Colors.dart';
 import 'package:myiproject/Models/User.dart';
 import 'package:myiproject/Views/Widgets/PopUps/Confirmation.dart';
 import 'package:myiproject/Views/Widgets/PopUps/PopUpLoading.dart';
+import 'package:myiproject/Views/Widgets/PopUps/showSummery.dart';
 
 class Utils {
   //Fonts Start
@@ -21,6 +22,10 @@ class Utils {
   static late ProfileUser profileUser;
 
   static var loadingMessage;
+
+  static double carbsValue = 0.0;
+  static double fatValue = 0.0;
+  static Map<String, dynamic> dataMap = {};
 
   static var imageResponse;
 
@@ -51,7 +56,7 @@ class Utils {
     return GoogleFonts.openSans(color: UtilColors.blackColor, fontSize: 13.0);
   }
 
-    static TextStyle getprimaryFieldTextStyle2(Color color) {
+  static TextStyle getprimaryFieldTextStyle2(Color color) {
     return GoogleFonts.openSans(color: color, fontSize: 13.0);
   }
 
@@ -124,7 +129,6 @@ class Utils {
     );
   }
 
-
   static Future showLoader(context) async {
     await showDialog(
       context: context,
@@ -135,12 +139,21 @@ class Utils {
     });
   }
 
-  static Future showConfirmation(
-    context,okFunction
-  ) async {
+  static Future showConfirmation(context, okFunction, noFunction) async {
     await showDialog(
       context: context,
-      builder: (_) => Confirmation(okFunction: okFunction),
+      builder: (_) =>
+          Confirmation(okFunction: okFunction, noFunction: noFunction),
+    ).then((onValue) {
+      parentLoadingContext = context;
+      checkShowLoader = true;
+    });
+  }
+
+  static Future<void> doCalculation(context) async {
+    await showDialog(
+      context: context,
+      builder: (_) => showSummery(),
     ).then((onValue) {
       parentLoadingContext = context;
       checkShowLoader = true;

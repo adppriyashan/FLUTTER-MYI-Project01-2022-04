@@ -4,19 +4,19 @@ import 'package:myiproject/Models/Colors.dart';
 import 'package:myiproject/Models/Utils.dart';
 
 class Confirmation extends StatefulWidget {
+  var okFunction, noFunction;
 
-  var okFunction;
-
-  Confirmation({required this.okFunction});
+  Confirmation({required this.okFunction, required this.noFunction});
 
   @override
-  State<StatefulWidget> createState() => ConfirmationState(okFunction:this.okFunction);
+  State<StatefulWidget> createState() => ConfirmationState(
+      okFunction: this.okFunction, noFunction: this.noFunction);
 }
 
 class ConfirmationState extends State<Confirmation>
     with SingleTickerProviderStateMixin {
-var okFunction;
-ConfirmationState({required this.okFunction});
+  var okFunction, noFunction;
+  ConfirmationState({required this.okFunction, required this.noFunction});
 
   @override
   Widget build(BuildContext context) {
@@ -65,9 +65,11 @@ ConfirmationState({required this.okFunction});
                                     MaterialStateProperty.all<Color>(
                                         UtilColors.redColor),
                               ),
-                              onPressed: () async {
-                                Navigator.pop(context);
-                              },
+                              onPressed: (noFunction != null)
+                                  ? noFunction
+                                  : () async {
+                                      Navigator.pop(context);
+                                    },
                             ),
                           ),
                           Padding(

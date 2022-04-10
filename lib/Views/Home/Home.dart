@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'package:firebase_database/firebase_database.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myiproject/Controllers/Auth/AuthController.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:myiproject/Models/Colors.dart';
+import 'package:myiproject/Models/Test.dart';
 import 'package:myiproject/Models/Utils.dart';
 import 'package:myiproject/Views/Forms/DataForm.dart';
 
@@ -80,32 +82,69 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    SizedBox(
-                        child: TextButton(
-                      child: Text(
-                        "CAPTURE IMAGE",
-                        style: GoogleFonts.openSans(),
-                      ),
-                      style: ButtonStyle(
-                        foregroundColor: MaterialStateProperty.all<Color>(
-                            UtilColors.whiteColor),
-                        backgroundColor: MaterialStateProperty.all<Color>(
-                            UtilColors.primaryColor),
-                      ),
-                      onPressed: () async {
+                    GestureDetector(
+                      onTap: () async {
                         XFile? image =
                             await _picker.pickImage(source: ImageSource.camera);
                         if (image != null && await image.length() > 0) {
-                          print("Have an image");
-                          print(await image.length());
-
                           submitImage(
                               file: File(image.path), filename: image.name);
                         } else {
                           print("Terminated");
                         }
                       },
-                    ))
+                      child: Container(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(child: Image.asset('assets/img/hand.png')),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 20.0,
+                                horizontal: 20.0
+                              ),
+                              decoration: BoxDecoration(
+                                color: UtilColors.primaryColorLight,
+                                borderRadius: BorderRadius.circular(50.0)
+                              ) ,
+                              child: Text('Scan Nutrition Label', style: GoogleFonts.openSans(color: UtilColors.whiteColor, fontSize: 20.0 ), ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.0,),
+                     GestureDetector(
+                      onTap: () async {
+                        XFile? image =
+                            await _picker.pickImage(source: ImageSource.camera);
+                        if (image != null && await image.length() > 0) {
+                          submitImage(
+                              file: File(image.path), filename: image.name);
+                        } else {
+                          print("Terminated");
+                        }
+                      },
+                      child: Container(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            SizedBox(child: Image.asset('assets/img/hand.png')),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 20.0,
+                                horizontal: 20.0
+                              ),
+                              decoration: BoxDecoration(
+                                color: UtilColors.primaryColorLight,
+                                borderRadius: BorderRadius.circular(50.0)
+                              ) ,
+                              child: Text('Scan Ingredients Label', style: GoogleFonts.openSans(color: UtilColors.whiteColor, fontSize: 20.0 ), ),
+                            )
+                          ],
+                        ),
+                      ),
+                    )
                   ],
                 ),
               )
@@ -116,6 +155,24 @@ class _HomeState extends State<Home> {
 
   Future<void> submitImage(
       {required File file, required String filename}) async {
+    Utils.imageResponse = await jsonDecode(Test.jsonData)['data'];
+
+    Utils.carbsValue = 0.0;
+    Utils.fatValue = 0.0;
+
+    for (var factor in Utils.imageResponse) {
+      var value = factor['value'].toDouble();
+      switch (factor['unit']) {
+        case 'Carbs':
+          Utils.carbsValue = value;
+          break;
+        case 'Sodium':
+          Utils.fatValue = value;
+          break;
+        default:
+      }
+    }
+
     await _databaseRef
         .child('users')
         .child(Utils.profileUser.uid)
@@ -126,16 +183,43 @@ class _HomeState extends State<Home> {
         Utils.showConfirmation(context, () {
           Navigator.pop(context);
           Navigator.push(
-              context, MaterialPageRoute(builder: (_) => DataForm()));
+              context,
+              MaterialPageRoute(
+                  builder: (_) => DataForm(data: value.snapshot.value)));
+        }, () {
+          Map pastData = value.snapshot.value as Map;
+
+          if (pastData.isNotEmpty) {
+            Map<String, dynamic> dataMap = {};
+            dataMap['username'] = pastData['username'];
+            dataMap['age'] = pastData['age'];
+            dataMap['gender'] = pastData['gender'];
+            dataMap['height'] = pastData['height'];
+            dataMap['weight'] = pastData['weight'];
+            dataMap['bodyfat'] = pastData['bodyfat'];
+            dataMap['fastbloodsugar'] = pastData['fastbloodsugar'];
+            dataMap['allegies'] = pastData['allegies'];
+            dataMap['pal'] = pastData['pal'];
+            dataMap['lp'] = pastData['lp'];
+
+            Utils.dataMap = dataMap;
+            Navigator.pop(context);
+            Utils.doCalculation(context);
+          }
         });
       } else {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => DataForm()));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => DataForm(
+                      data: null,
+                    )));
       }
     });
 
     // var request = http.MultipartRequest(
     //   'POST',
-    //   Uri.parse("10.0.2.2:5000"),
+    //   Uri.parse("http://10.0.2.2:5000"),
     // );
     // request.files.add(
     //   http.MultipartFile(
@@ -152,8 +236,24 @@ class _HomeState extends State<Home> {
     // if (res.statusCode == 200) {
     //   var data = jsonDecode(res.toString());
     //   if (data['code'] == 200 && data['status'] == 'success') {
-    //     if (data['data'] != null) {
+    //     if (data['data'] != null && data['data'].length>0) {
     //       Utils.imageResponse = data['data'];
+
+    //       Utils.carbsValue = 0.0;
+    //       Utils.fatValue = 0.0;
+
+    //       for (var factor in data['data']) {
+    //         var value = factor['value'].toDouble();
+    //         switch (factor['unit']) {
+    //           case 'Carbs':
+    //             Utils.carbsValue = value;
+    //             break;
+    //           case 'Sodium':
+    //             Utils.fatValue = value;
+    //             break;
+    //           default:
+    //         }
+    //       }
 
     //       await _databaseRef
     //           .child('users')
@@ -161,16 +261,42 @@ class _HomeState extends State<Home> {
     //           .child('data')
     //           .once()
     //           .then((value) {
-    //         if (value.snapshot.exists) {
-    //           Utils.showConfirmation(context, () {
-        // Navigator.pop(context);
-    //             Navigator.push(
-    //                 context, MaterialPageRoute(builder: (_) => DataForm()));
-    //           });
-    //         } else {
-    //           Navigator.push(
-    //               context, MaterialPageRoute(builder: (_) => DataForm()));
-    //         }
+    //   if (value.snapshot.exists) {
+    //     Utils.showConfirmation(context, () {
+    //       Navigator.pop(context);
+    //       Navigator.push(
+    //           context,
+    //           MaterialPageRoute(
+    //               builder: (_) => DataForm(data: value.snapshot.value)));
+    //     }, () {
+    //       Map pastData = value.snapshot.value as Map;
+
+    //       if (pastData.isNotEmpty) {
+    //         Map<String, dynamic> dataMap = {};
+    //         dataMap['username'] = pastData['username'];
+    //         dataMap['age'] = pastData['age'];
+    //         dataMap['gender'] = pastData['gender'];
+    //         dataMap['height'] = pastData['height'];
+    //         dataMap['weight'] = pastData['weight'];
+    //         dataMap['bodyfat'] = pastData['bodyfat'];
+    //         dataMap['fastbloodsugar'] = pastData['fastbloodsugar'];
+    //         dataMap['allegies'] = pastData['allegies'];
+    //         dataMap['pal'] = pastData['pal'];
+    //         dataMap['lp'] = pastData['lp'];
+
+    //         Utils.dataMap = dataMap;
+    //         Navigator.pop(context);
+    //         Utils.doCalculation(context);
+    //       }
+    //     });
+    //   } else {
+    //     Navigator.push(
+    //         context,
+    //         MaterialPageRoute(
+    //             builder: (_) => DataForm(
+    //                   data: null,
+    //                 )));
+    //   }
     //       });
     //     } else {
     //       Utils.showToast("Uploaded image processing failure.");
